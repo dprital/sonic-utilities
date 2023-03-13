@@ -832,7 +832,7 @@ class DBMigrator():
         # not using hash and won't work.
         # FAST_REBOOT table exists only if fast-reboot was triggered.
         keys = self.stateDB.keys(self.stateDB.STATE_DB, "FAST_REBOOT")
-        if not keys:
+        if keys:
             enable_state = 'true'
         else:
             enable_state = 'false'
