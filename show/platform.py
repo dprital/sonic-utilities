@@ -69,6 +69,103 @@ def summary(json):
             click.echo("Switch Type: {}".format(switch_type))
 
 
+# 'bmc' subcommand ("show platform bmc")
+@platform.group()
+def bmc():
+    """Show BMC information"""
+    pass
+
+
+# 'summary' subcommand ("show platform bmc summary")
+@bmc.command()
+@click.option('--json', is_flag=True, help="Output in JSON format")
+def summary(json):
+    """Show BMC summary information"""
+    try:
+        import sonic_platform
+        chassis = sonic_platform.platform.Platform().get_chassis()
+        bmc = chassis.get_bmc()
+        
+        if bmc is None:
+            click.echo("BMC is not available on this platform")
+            return
+        
+        # Get BMC EEPROM information
+        eeprom_info = bmc.get_eeprom()
+        
+        if not eeprom_info:
+            click.echo("Failed to retrieve BMC EEPROM information")
+            return
+        
+        # Extract the required fields
+        manufacturer = eeprom_info.get('Manufacturer', 'N/A')
+        model = eeprom_info.get('Model', 'N/A')
+        part_number = eeprom_info.get('PartNumber', 'N/A')
+        
+        if json:
+            bmc_summary = {
+                'Manufacturer': manufacturer,
+                'Model': model,
+                'PartNumber': part_number
+            }
+            click.echo(clicommon.json_dump(bmc_summary))
+        else:
+            click.echo("Manufacturer: {}".format(manufacturer))
+            click.echo("Model: {}".format(model))
+            click.echo("Part Number: {}".format(part_number))
+            
+    except Exception as e:
+        click.echo("Error retrieving BMC information: {}".format(str(e)))
+
+
+# 'eeprom' subcommand ("show platform bmc eeprom")
+@bmc.command()
+@click.option('--json', is_flag=True, help="Output in JSON format")
+def eeprom(json):
+    """Show BMC EEPROM information"""
+    try:
+        import sonic_platform
+        chassis = sonic_platform.platform.Platform().get_chassis()
+        bmc = chassis.get_bmc()
+        
+        if bmc is None:
+            click.echo("BMC is not available on this platform")
+            return
+        
+        # Get BMC EEPROM information
+        eeprom_info = bmc.get_eeprom()
+        
+        if not eeprom_info:
+            click.echo("Failed to retrieve BMC EEPROM information")
+            return
+        
+        # Extract the required fields
+        manufacturer = eeprom_info.get('Manufacturer', 'N/A')
+        model = eeprom_info.get('Model', 'N/A')
+        part_number = eeprom_info.get('PartNumber', 'N/A')
+        power_state = eeprom_info.get('PowerState', 'N/A')
+        serial_number = eeprom_info.get('SerialNumber', 'N/A')
+        
+        if json:
+            bmc_eeprom = {
+                'Manufacturer': manufacturer,
+                'Model': model,
+                'PartNumber': part_number,
+                'PowerState': power_state,
+                'SerialNumber': serial_number
+            }
+            click.echo(clicommon.json_dump(bmc_eeprom))
+        else:
+            click.echo("Manufacturer: {}".format(manufacturer))
+            click.echo("Model: {}".format(model))
+            click.echo("PartNumber: {}".format(part_number))
+            click.echo("PowerState: {}".format(power_state))
+            click.echo("SerialNumber: {}".format(serial_number))
+            
+    except Exception as e:
+        click.echo("Error retrieving BMC EEPROM information: {}".format(str(e)))
+
+
 # 'syseeprom' subcommand ("show platform syseeprom")
 @platform.command()
 @click.option('--verbose', is_flag=True, help="Enable verbose output")

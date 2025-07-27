@@ -1152,7 +1152,6 @@ save_platform_info() {
     trap 'handle_error $? $LINENO' ERR
     PLATFORM=${PLATFORM:-`sonic-cfggen -H -v DEVICE_METADATA.localhost.platform`}
     if [[ ! $PLATFORM =~ .*(mlnx|nvidia).*simx.* ]]; then
-        # TODO(BMC): add BMCeeprom if BMC is supported ?
         save_cmd "show platform syseeprom" "syseeprom"
         save_cmd "show platform psustatus" "psustatus"
         save_cmd "show platform ssdhealth --vendor" "ssdhealth"
