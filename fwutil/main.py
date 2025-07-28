@@ -284,7 +284,6 @@ def fw_install(ctx, yes, fw_path):
             os.remove(fw_path)
 
 
-# TODO(BMC): Check if needed for BMC
 # 'fw' subcommand
 @component_update.command(name='fw')
 @click.option('-y', '--yes', 'yes', is_flag=True, show_default=True, help="Assume \"yes\" as answer to all prompts and run non-interactively")
