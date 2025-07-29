@@ -90,9 +90,7 @@ def summary(json):
             click.echo("BMC is not available on this platform")
             return
         
-        # Get BMC EEPROM information
         eeprom_info = bmc.get_eeprom()
-        
         if not eeprom_info:
             click.echo("Failed to retrieve BMC EEPROM information")
             return
@@ -101,18 +99,27 @@ def summary(json):
         manufacturer = eeprom_info.get('Manufacturer', 'N/A')
         model = eeprom_info.get('Model', 'N/A')
         part_number = eeprom_info.get('PartNumber', 'N/A')
+        power_state = eeprom_info.get('PowerState', 'N/A')
+        serial_number = eeprom_info.get('SerialNumber', 'N/A')
+        bmc_version = bmc.get_version()
         
         if json:
             bmc_summary = {
                 'Manufacturer': manufacturer,
                 'Model': model,
-                'PartNumber': part_number
+                'PartNumber': part_number,
+                'SerialNumber': serial_number,
+                'PowerState': power_state,
+                'FirmwareVersion': bmc_version
             }
             click.echo(clicommon.json_dump(bmc_summary))
         else:
             click.echo("Manufacturer: {}".format(manufacturer))
             click.echo("Model: {}".format(model))
-            click.echo("Part Number: {}".format(part_number))
+            click.echo("PartNumber: {}".format(part_number))
+            click.echo("SerialNumber: {}".format(serial_number))
+            click.echo("PowerState: {}".format(power_state))
+            click.echo("FirmwareVersion: {}".format(bmc_version))
             
     except Exception as e:
         click.echo("Error retrieving BMC information: {}".format(str(e)))
