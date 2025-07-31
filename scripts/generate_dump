@@ -1970,12 +1970,11 @@ is_bmc_supported() {
 ###############################################################################
 trigger_bmc_debug_log_dump() {
     trap 'handle_error $? $LINENO' ERR
-
     if ! is_bmc_supported; then
+        echo "INFO: BMC is not found on this platform. Skipping..."
         return
     fi
-
-    # This script will trigger BMC redfish API start BMC debug log dump task
+    # Trigger BMC redfish API to start BMC debug log dump task
     local task_id=$(python3 /usr/local/bin/bmc_techsupport.py -m t)
     echo $task_id
 }
@@ -1993,21 +1992,16 @@ collect_bmc_files() {
     $MKDIR $V -p $TARDIR/bmc
     trap 'handle_error $? $LINENO' ERR
     start_t=$(date +%s%3N)
-
     if ! is_bmc_supported; then
-        echo "INFO: BMC is not found on this platform. Skipping..."
         return
     fi
 
     local bmc_debug_log_dump_task_id=$1
-    # Define the tmp filepath of BMC debug log dump
     local TARBALL_XZ="/tmp/bmc_debug_log_dump.tar.xz"
-
     # Remove existing tarball files if they exist
     [ -f "$TARBALL_XZ" ] && rm -f "$TARBALL_XZ"
 
-    # This script will invoke BMC redfish API to extract BMC debug log dump
-    # to "/tmp/bmc_debug_log_dump.tar.xz"
+    # Invoke BMC redfish API to extract BMC debug log dump to "/tmp/bmc_debug_log_dump.tar.xz"
     python3 /usr/local/bin/bmc_techsupport.py -m c -p "$TARBALL_XZ" -t $bmc_debug_log_dump_task_id
     if [ -f "$TARBALL_XZ" ]; then
         $CP $V -rf "$TARBALL_XZ" $TARDIR/bmc
@@ -2017,9 +2011,8 @@ collect_bmc_files() {
 
     # Cleanup
     [ -f "$TARBALL_XZ" ] && rm -f "$TARBALL_XZ"
-
     end_t=$(date +%s%3N)
-    echo "[ TAR /var/bmc Files ] : $(($end_t-$start_t)) msec" >> $TECHSUPPORT_TIME_INFO
+    echo "[ collect_bmc_files ] : $(($end_t-$start_t)) msec" >> $TECHSUPPORT_TIME_INFO
 }
 
 ###############################################################################
@@ -2469,7 +2462,6 @@ main() {
     save_warmboot_files &
 
     if [ "$bmc_debug_log_dump_task_id" != "-1" ]; then
-        # keep BMC files collect before 'save_to_tar'
         collect_bmc_files $bmc_debug_log_dump_task_id &
     fi
 

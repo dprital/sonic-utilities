@@ -24,14 +24,13 @@ bmc_techsupport script.
             * In this step we will wait for the task-id to finish if it has not
               finished
 
-            * Blocking action till we get the file or having ERROR - Timeout is 120 seconds
+            * Blocking action till we get the file or having ERROR or Timeout
 
             * It is invoked with the parameter '-m c'
               E.g.: python3 /usr/local/bin/bmc_techsupport -m c -p <path> -t <task-id> -- to collect log dump
 
     Basically, in the generate_dump script we will call the first method
-    at the beginning of its process and the second method towards the end
-    of the process, or use the wrapper method for a single call approach.
+    at the beginning of its process and the second method towards the end of the process.
 """
 
 import syslog
@@ -87,32 +86,32 @@ class BMCDebugDumpExtractor:
             log_dump_dir, log_dump_filename = parse_file_path(filepath)
             if not log_dump_dir or not log_dump_filename:
                 raise Exception(f'Invalid given filepath: {filepath}')
-
             if task_id == BMCDebugDumpExtractor.INVALID_TASK_ID:
                 raise Exception(f'Invalid Task-ID')
 
             start_time = time.time()
             syslog.syslog(syslog.LOG_INFO, f'Collecting BMC debug log dump')
-            timeout = 360
+            timeout = 60
             ret, err_msg = self.bmc.get_bmc_debug_log_dump(task_id=task_id, filename=log_dump_filename, path=log_dump_dir, timeout=timeout)
             end_time = time.time()
             duration = end_time - start_time
             if ret != 0:
                 syslog.syslog(syslog.LOG_ERR, f'BMC debug log dump does not finish within {timeout} seconds: {err_msg}')
                 raise Exception(err_msg)
-
             syslog.syslog(syslog.LOG_INFO, f'BMC debug log dump takes {duration} seconds to complete')
-
-            if duration > 120:
-                syslog.syslog(syslog.LOG_ERR, f'BMC debug log dump exceeds 120 seconds')
-
             syslog.syslog(syslog.LOG_INFO, f'Finished successfully collecting BMC debug log dump.')
         except Exception as e:
             syslog.syslog(syslog.LOG_ERR, f'Failed to collect BMC debug log dump - {str(e)}')
 
 
 def main(mode, task_id, filepath):
-    extractor = BMCDebugDumpExtractor()
+    try:
+        extractor = BMCDebugDumpExtractor()
+    except Exception as e:
+        syslog.syslog(syslog.LOG_ERR, f'Failed to initialize BMCDebugDumpExtractor - {str(e)}')
+        if mode == 't':
+            print(f'{BMCDebugDumpExtractor.INVALID_TASK_ID}')
+        return
     if mode == 't':
         extractor.trigger_debug_dump()
     elif mode == 'c':
