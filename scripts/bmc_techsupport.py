@@ -33,22 +33,16 @@ bmc_techsupport script.
     at the beginning of its process and the second method towards the end of the process.
 """
 
-import syslog
+
 import argparse
 import os
 import sonic_platform
 import time
 
-def parse_file_path(filepath):
-    '''
-    Returns a tuple (parent_dir, filename) based on the given filepath
-    E.g.:
-        filepath = '/path/to/your/file.txt'
-        returns ('/path/to/your', 'file.txt')
-    '''
-    directory = os.path.dirname(filepath)
-    filename = os.path.basename(filepath)
-    return directory, filename
+
+TIMEOUT_FOR_GET_BMC_DEBUG_LOG_DUMP_IN_SECONDS = 60
+SYSLOG_IDENTIFIER = "bmc_techsupport"
+log = sonic_platform.syslogger.SysLogger(SYSLOG_IDENTIFIER)
 
 
 class BMCDebugDumpExtractor:
@@ -66,15 +60,15 @@ class BMCDebugDumpExtractor:
         '''
         task_id = BMCDebugDumpExtractor.INVALID_TASK_ID
         try:
-            syslog.syslog(syslog.LOG_INFO, f'Triggering BMC debug log dump Redfish task')
+            log.log_info("Triggering BMC debug log dump Redfish task")
             (ret, (task_id, err_msg)) = self.bmc.trigger_bmc_debug_log_dump()
             if ret != 0:
-                syslog.syslog(syslog.LOG_ERR, f'Fail to trigger BMC debug log dump: {err_msg}')
+                log.log_error(f'Failed to trigger BMC debug log dump: {err_msg}')
                 raise Exception(err_msg)
 
-            syslog.syslog(syslog.LOG_INFO, f'Successfully triggered  BMC debug log dump - Task-id: {task_id}')
+            log.log_info(f'Successfully triggered BMC debug log dump - Task-id: {task_id}')
         except Exception as e:
-            syslog.syslog(syslog.LOG_ERR, f'Failed to trigger BMC debug log dump - {str(e)}')
+            log.log_error(f'Failed to trigger BMC debug log dump - {str(e)}')
         finally:
             print(f'{task_id}')
 
@@ -83,47 +77,50 @@ class BMCDebugDumpExtractor:
             Extract BMC debug log dump and save running task id
         '''
         try:
-            log_dump_dir, log_dump_filename = parse_file_path(filepath)
+            if task_id is None or task_id == BMCDebugDumpExtractor.INVALID_TASK_ID:
+                raise Exception(f'Invalid Task-ID')
+            log_dump_dir = os.path.dirname(filepath)
+            log_dump_filename = os.path.basename(filepath)
             if not log_dump_dir or not log_dump_filename:
                 raise Exception(f'Invalid given filepath: {filepath}')
-            if task_id == BMCDebugDumpExtractor.INVALID_TASK_ID:
-                raise Exception(f'Invalid Task-ID')
 
             start_time = time.time()
-            syslog.syslog(syslog.LOG_INFO, f'Collecting BMC debug log dump')
-            timeout = 60
-            ret, err_msg = self.bmc.get_bmc_debug_log_dump(task_id=task_id, filename=log_dump_filename, path=log_dump_dir, timeout=timeout)
+            log.log_info("Collecting BMC debug log dump")
+            ret, err_msg = self.bmc.get_bmc_debug_log_dump(task_id=task_id, filename=log_dump_filename, path=log_dump_dir,
+                                                           timeout=TIMEOUT_FOR_GET_BMC_DEBUG_LOG_DUMP_IN_SECONDS)
             end_time = time.time()
             duration = end_time - start_time
             if ret != 0:
-                syslog.syslog(syslog.LOG_ERR, f'BMC debug log dump does not finish within {timeout} seconds: {err_msg}')
+                log.log_error(f'BMC debug log dump does not finish within {TIMEOUT_FOR_GET_BMC_DEBUG_LOG_DUMP_IN_SECONDS} seconds: {err_msg}')
                 raise Exception(err_msg)
-            syslog.syslog(syslog.LOG_INFO, f'BMC debug log dump takes {duration} seconds to complete')
-            syslog.syslog(syslog.LOG_INFO, f'Finished successfully collecting BMC debug log dump.')
+            log.log_info(f'Finished successfully collecting BMC debug log dump. Duration: {duration} seconds')
         except Exception as e:
-            syslog.syslog(syslog.LOG_ERR, f'Failed to collect BMC debug log dump - {str(e)}')
+            log.log_error(f'Failed to collect BMC debug log dump - {str(e)}')
 
 
 def main(mode, task_id, filepath):
     try:
         extractor = BMCDebugDumpExtractor()
+        if extractor.bmc is None:
+            raise Exception('BMC instance is not available')
     except Exception as e:
-        syslog.syslog(syslog.LOG_ERR, f'Failed to initialize BMCDebugDumpExtractor - {str(e)}')
-        if mode == 't':
+        log.log_error(f'Failed to initialize BMCDebugDumpExtractor: {str(e)}')
+        if mode == 'trigger':
             print(f'{BMCDebugDumpExtractor.INVALID_TASK_ID}')
         return
-    if mode == 't':
+    if mode == 'trigger':
         extractor.trigger_debug_dump()
-    elif mode == 'c':
+    elif mode == 'collect':
         extractor.extract_debug_dump_file(task_id, filepath)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="BMC tech-support generator script.")
     # Add the arguments
-    parser.add_argument('-m', '--mode', choices=['c', 't'], required=True, help="Mode of operation: 'c' for collecting debug dump or 't' for triggering debug dump task.")
-    parser.add_argument('-p', '--path', help="Optional path to the file.")
-    parser.add_argument('-t', '--task', help="Task-ID to collect the debug dump from")
+    parser.add_argument('-m', '--mode', choices=['collect', 'trigger'], required=True,
+                        help="Mode of operation: 'collect' for collecting debug dump or 'trigger' for triggering debug dump task.")
+    parser.add_argument('-p', '--path', help="Path to save the BMC debug log dump file.")
+    parser.add_argument('-t', '--task', help="Task-ID to monitor and collect the debug dump from.")
 
     # Parse the arguments
     args = parser.parse_args()

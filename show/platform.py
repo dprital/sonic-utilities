@@ -114,15 +114,15 @@ def summary(json):
             }
             click.echo(clicommon.json_dump(bmc_summary))
         else:
-            click.echo("Manufacturer: {}".format(manufacturer))
-            click.echo("Model: {}".format(model))
-            click.echo("PartNumber: {}".format(part_number))
-            click.echo("SerialNumber: {}".format(serial_number))
-            click.echo("PowerState: {}".format(power_state))
-            click.echo("FirmwareVersion: {}".format(bmc_version))
+            click.echo(f"Manufacturer: {manufacturer}")
+            click.echo(f"Model: {model}")
+            click.echo(f"PartNumber: {part_number}")
+            click.echo(f"SerialNumber: {serial_number}")
+            click.echo(f"PowerState: {power_state}")
+            click.echo(f"FirmwareVersion: {bmc_version}")
             
     except Exception as e:
-        click.echo("Error retrieving BMC information: {}".format(str(e)))
+        click.echo(f"Error retrieving BMC information: {str(e)}")
 
 
 # 'eeprom' subcommand ("show platform bmc eeprom")
@@ -163,14 +163,14 @@ def eeprom(json):
             }
             click.echo(clicommon.json_dump(bmc_eeprom))
         else:
-            click.echo("Manufacturer: {}".format(manufacturer))
-            click.echo("Model: {}".format(model))
-            click.echo("PartNumber: {}".format(part_number))
-            click.echo("PowerState: {}".format(power_state))
-            click.echo("SerialNumber: {}".format(serial_number))
+            click.echo(f"Manufacturer: {manufacturer}")
+            click.echo(f"Model: {model}")
+            click.echo(f"PartNumber: {part_number}")
+            click.echo(f"PowerState: {power_state}")
+            click.echo(f"SerialNumber: {serial_number}")
             
     except Exception as e:
-        click.echo("Error retrieving BMC EEPROM information: {}".format(str(e)))
+        click.echo(f"Error retrieving BMC EEPROM information: {str(e)}")
 
 
 # 'syseeprom' subcommand ("show platform syseeprom")

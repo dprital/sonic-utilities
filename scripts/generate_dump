@@ -1975,7 +1975,7 @@ trigger_bmc_debug_log_dump() {
         return
     fi
     # Trigger BMC redfish API to start BMC debug log dump task
-    local task_id=$(python3 /usr/local/bin/bmc_techsupport.py -m t)
+    local task_id=$(python3 /usr/local/bin/bmc_techsupport.py -m trigger)
     echo $task_id
 }
 
@@ -2002,7 +2002,7 @@ collect_bmc_files() {
     [ -f "$TARBALL_XZ" ] && rm -f "$TARBALL_XZ"
 
     # Invoke BMC redfish API to extract BMC debug log dump to "/tmp/bmc_debug_log_dump.tar.xz"
-    python3 /usr/local/bin/bmc_techsupport.py -m c -p "$TARBALL_XZ" -t $bmc_debug_log_dump_task_id
+    python3 /usr/local/bin/bmc_techsupport.py -m collect -p "$TARBALL_XZ" -t $bmc_debug_log_dump_task_id
     if [ -f "$TARBALL_XZ" ]; then
         $CP $V -rf "$TARBALL_XZ" $TARDIR/bmc
     else
