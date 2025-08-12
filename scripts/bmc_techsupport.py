@@ -38,11 +38,12 @@ import argparse
 import os
 import sonic_platform
 import time
+from sonic_py_common.syslogger import SysLogger
 
 
 TIMEOUT_FOR_GET_BMC_DEBUG_LOG_DUMP_IN_SECONDS = 60
 SYSLOG_IDENTIFIER = "bmc_techsupport"
-log = sonic_platform.syslogger.SysLogger(SYSLOG_IDENTIFIER)
+log = SysLogger(SYSLOG_IDENTIFIER)
 
 
 class BMCDebugDumpExtractor:
